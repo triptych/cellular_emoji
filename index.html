@@ -1,0 +1,1772 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Emoji Cellular Automata</title>
+        <style>
+            :root {
+                --primary-color: #3498db;
+                --secondary-color: #2ecc71;
+                --dark-color: #2c3e50;
+                --light-color: #ecf0f1;
+                --danger-color: #e74c3c;
+                --warning-color: #f39c12;
+            }
+
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                color: var(--dark-color);
+                background-color: var(--light-color);
+                padding: 20px;
+            }
+
+            .container {
+                max-width: 1400px;
+                margin: 0 auto;
+                display: grid;
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr;
+                gap: 20px;
+                height: calc(100vh - 40px);
+            }
+
+            header {
+                text-align: center;
+                padding: 10px;
+                background-color: var(--dark-color);
+                color: var(--light-color);
+                border-radius: 8px;
+            }
+
+            .main-content {
+                display: grid;
+                grid-template-columns: 300px 1fr;
+                gap: 20px;
+                height: 100%;
+            }
+
+            @media (max-width: 768px) {
+                .main-content {
+                    grid-template-columns: 1fr;
+                    grid-template-rows: auto 1fr;
+                }
+            }
+
+            .control-panel {
+                background-color: white;
+                border-radius: 8px;
+                padding: 15px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                overflow-y: auto;
+            }
+
+            .panel-section {
+                margin-bottom: 20px;
+                border-bottom: 1px solid #eee;
+                padding-bottom: 15px;
+            }
+
+            .panel-section:last-child {
+                border-bottom: none;
+                margin-bottom: 0;
+            }
+
+            h2 {
+                font-size: 1.2rem;
+                margin-bottom: 10px;
+                color: var(--primary-color);
+            }
+
+            .control-group {
+                margin-bottom: 10px;
+                display: flex;
+                flex-direction: column;
+            }
+
+            label {
+                margin-bottom: 5px;
+                font-weight: 500;
+            }
+
+            button,
+            input,
+            select,
+            textarea {
+                padding: 8px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                font-family: inherit;
+            }
+
+            input[type="number"] {
+                width: 100%;
+            }
+
+            button {
+                background-color: var(--primary-color);
+                color: white;
+                border: none;
+                cursor: pointer;
+                transition: background-color 0.3s;
+                margin-top: 5px;
+            }
+
+            button:hover {
+                background-color: #2980b9;
+            }
+
+            .btn-danger {
+                background-color: var(--danger-color);
+            }
+
+            .btn-danger:hover {
+                background-color: #c0392b;
+            }
+
+            .btn-success {
+                background-color: var(--secondary-color);
+            }
+
+            .btn-success:hover {
+                background-color: #27ae60;
+            }
+
+            .btn-warning {
+                background-color: var(--warning-color);
+            }
+
+            .btn-warning:hover {
+                background-color: #d35400;
+            }
+
+            .simulation-controls {
+                display: flex;
+                gap: 5px;
+            }
+
+            .simulation-controls button {
+                flex: 1;
+            }
+
+            .grid-container {
+                background-color: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                overflow: hidden;
+                position: relative;
+                display: flex;
+                justify-content: center;
+                align-items: flex-start;
+                padding-top: 20px;
+            }
+
+            .grid {
+                display: grid;
+                gap: 1px;
+                background-color: #ddd;
+                transform-origin: center;
+            }
+
+            .cell {
+                background-color: white;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                user-select: none;
+                cursor: pointer;
+                font-size: 1.2em;
+            }
+
+            .emoji-mapping {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 10px;
+            }
+
+            .emoji-map-item {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            }
+
+            .emoji-display {
+                font-size: 1.5em;
+                width: 30px;
+                text-align: center;
+            }
+
+            .rule-item {
+                background-color: #f8f9fa;
+                padding: 10px;
+                border-radius: 4px;
+                margin-bottom: 10px;
+                position: relative;
+            }
+
+            .rule-item button.remove-rule {
+                position: absolute;
+                top: 5px;
+                right: 5px;
+                padding: 2px 5px;
+                font-size: 0.8em;
+                background-color: var(--danger-color);
+            }
+
+            .rule-text {
+                margin-bottom: 5px;
+                font-family: monospace;
+                white-space: pre-wrap;
+            }
+
+            .saved-configs {
+                max-height: 200px;
+                overflow-y: auto;
+                margin-top: 10px;
+            }
+
+            .config-item {
+                display: flex;
+                justify-content: space-between;
+                padding: 5px;
+                border-bottom: 1px solid #eee;
+            }
+
+            .config-item:last-child {
+                border-bottom: none;
+            }
+
+            .config-item button {
+                padding: 2px 5px;
+                font-size: 0.8em;
+            }
+
+            .zoom-controls {
+                position: absolute;
+                bottom: 10px;
+                right: 10px;
+                display: flex;
+                gap: 5px;
+            }
+
+            .zoom-controls button {
+                width: 40px;
+                height: 40px;
+                font-size: 1.5em;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                border-radius: 50%;
+                opacity: 0.7;
+            }
+
+            .zoom-controls button:hover {
+                opacity: 1;
+            }
+
+            .stats {
+                margin-top: 10px;
+                font-size: 0.9em;
+            }
+
+            .stats-item {
+                display: flex;
+                justify-content: space-between;
+            }
+
+            .tooltip {
+                position: relative;
+                display: inline-block;
+                cursor: help;
+            }
+
+            .tooltip .tooltip-text {
+                visibility: hidden;
+                width: 200px;
+                background-color: var(--dark-color);
+                color: white;
+                text-align: center;
+                border-radius: 6px;
+                padding: 5px;
+                position: absolute;
+                z-index: 1;
+                bottom: 125%;
+                left: 50%;
+                transform: translateX(-50%);
+                opacity: 0;
+                transition: opacity 0.3s;
+            }
+
+            .tooltip:hover .tooltip-text {
+                visibility: visible;
+                opacity: 1;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <header>
+                <h1>🧫 Emoji Cellular Automata 🧫</h1>
+            </header>
+
+            <div class="main-content">
+                <div class="control-panel">
+                    <div class="panel-section">
+                        <h2>Grid Settings</h2>
+                        <div class="control-group">
+                            <label for="grid-width">Width:</label>
+                            <input type="number" id="grid-width" min="10" max="200" value="50">
+                        </div>
+                        <div class="control-group">
+                            <label for="grid-height">Height:</label>
+                            <input type="number" id="grid-height" min="10" max="200" value="50">
+                        </div>
+                        <div class="control-group">
+                            <label for="cell-size">Cell Size:</label>
+                            <input type="number" id="cell-size" min="5" max="50" value="12">
+                        </div>
+                        <button id="apply-grid-settings">Apply Settings</button>
+                    </div>
+
+                    <div class="panel-section">
+                        <h2>Simulation Controls</h2>
+                        <div class="simulation-controls">
+                            <button id="play-pause" class="btn-success">▶ Play</button>
+                            <button id="step">Step</button>
+                            <button id="clear" class="btn-danger">Clear</button>
+                        </div>
+                        <div class="control-group">
+                            <label for="simulation-speed">Speed (ms):</label>
+                            <input type="number" id="simulation-speed" min="50" max="1000" step="50" value="200">
+                        </div>
+                        <div class="control-group">
+                            <label for="random-fill">Random Fill %:</label>
+                            <input type="number" id="random-fill" min="0" max="100" value="30">
+                            <button id="random-fill-btn">Fill Random</button>
+                        </div>
+                    </div>
+
+                    <div class="panel-section">
+                        <h2>Emoji Mapping</h2>
+                        <div class="emoji-mapping" id="emoji-mapping">
+                            <!-- Emoji mappings will be generated here -->
+                        </div>
+                    </div>
+
+                    <div class="panel-section">
+                        <h2>Rules</h2>
+                        <div class="control-group">
+                            <label>Add New Rule:</label>
+                            <div class="control-group">
+                                <label for="rule-cell-value">If cell value:</label>
+                                <select id="rule-cell-value">
+                                    <option value="any">Any</option>
+                                    <option value="0">0 (Empty)</option>
+                                    <option value="range">In Range</option>
+                                </select>
+                                <div id="cell-value-range" style="display: none; margin-top: 5px;">
+                                    <input type="number" id="cell-value-min" min="0" max="100" value="1" placeholder="Min">
+                                    <input type="number" id="cell-value-max" min="0" max="100" value="100" placeholder="Max">
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label for="rule-neighbor-count">And neighbor count:</label>
+                                <select id="rule-neighbor-count">
+                                    <option value="exactly">Exactly</option>
+                                    <option value="less-than">Less Than</option>
+                                    <option value="greater-than">Greater Than</option>
+                                    <option value="range">In Range</option>
+                                </select>
+                                <div id="neighbor-count-value" style="margin-top: 5px;">
+                                    <input type="number" id="neighbor-count" min="0" max="8" value="3">
+                                </div>
+                                <div id="neighbor-count-range" style="display: none; margin-top: 5px;">
+                                    <input type="number" id="neighbor-count-min" min="0" max="8" value="2" placeholder="Min">
+                                    <input type="number" id="neighbor-count-max" min="0" max="8" value="3" placeholder="Max">
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label for="rule-neighbor-value">With neighbor values:</label>
+                                <select id="rule-neighbor-value">
+                                    <option value="any">Any</option>
+                                    <option value="non-zero">Non-Zero</option>
+                                    <option value="range">In Range</option>
+                                </select>
+                                <div id="neighbor-value-range" style="display: none; margin-top: 5px;">
+                                    <input type="number" id="neighbor-value-min" min="0" max="100" value="1" placeholder="Min">
+                                    <input type="number" id="neighbor-value-max" min="0" max="100" value="100" placeholder="Max">
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label for="rule-new-value">Then set cell value to:</label>
+                                <input type="number" id="rule-new-value" min="0" max="100" value="1">
+                            </div>
+                            <button id="add-rule">Add Rule</button>
+                        </div>
+                        <div id="rules-list">
+                            <!-- Rules will be listed here -->
+                        </div>
+                    </div>
+
+                    <div class="panel-section">
+                        <h2>Presets</h2>
+                        <div class="control-group">
+                            <label for="preset-select">Load Preset:</label>
+                            <select id="preset-select">
+                                <option value="">Select a preset</option>
+                                <option value="game-of-life">Conway's Game of Life</option>
+                                <option value="forest-fire">Forest Fire</option>
+                                <option value="cyclic">Cyclic Cellular Automaton</option>
+                                <option value="brian-brain">Brian's Brain</option>
+                            </select>
+                            <button id="load-preset">Load</button>
+                        </div>
+                    </div>
+
+                    <div class="panel-section">
+                        <h2>Save/Load</h2>
+                        <div class="control-group">
+                            <label for="config-name">Configuration Name:</label>
+                            <input type="text" id="config-name" placeholder="My Configuration">
+                            <button id="save-config">Save Configuration</button>
+                        </div>
+                        <div class="saved-configs" id="saved-configs">
+                            <!-- Saved configurations will be listed here -->
+                        </div>
+                        <div class="control-group" style="margin-top: 10px;">
+                            <button id="export-config">Export Configuration</button>
+                            <button id="import-config">Import Configuration</button>
+                        </div>
+                    </div>
+
+                    <div class="panel-section">
+                        <h2>Statistics</h2>
+                        <div class="stats" id="statistics">
+                            <!-- Statistics will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-container">
+                    <div class="grid" id="grid"></div>
+                    <div class="zoom-controls">
+                        <button id="zoom-in">+</button>
+                        <button id="zoom-out">-</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer style="text-align: center; margin-top: 20px; padding: 10px; background-color: var(--dark-color); color: var(--light-color); border-radius: 8px;">
+            <p>Created by
+                <a href="https://andreww.xyz" style="color: var(--primary-color); text-decoration: none;">Andrew Wooldridge</a>
+            </p>
+        </footer>
+
+        <script>
+            // Cellular Automata Simulator
+            class CellularAutomata {
+                constructor(width, height) {
+                    this.width = width;
+                    this.height = height;
+                    this.currentGrid = new Uint8Array(width * height);
+                    this.nextGrid = new Uint8Array(width * height);
+                    this.rules = [];
+                    this.generation = 0;
+                    this.running = false;
+                    this.interval = null;
+                    this.speed = 200; // ms
+
+                    // Precalculate neighbor indices for each cell
+                    this.neighborIndices = this.calculateNeighborIndices();
+                }
+
+                calculateNeighborIndices() {
+                    const indices = new Array(this.width * this.height);
+
+                    for (let y = 0; y < this.height; y++) {
+                        for (let x = 0; x < this.width; x++) {
+                            const idx = y * this.width + x;
+                            const neighbors = [];
+
+                            // Check all 8 surrounding cells (Moore neighborhood)
+                            for (let dy = -1; dy <= 1; dy++) {
+                                for (let dx = -1; dx <= 1; dx++) {
+                                    if (dx === 0 && dy === 0) 
+                                        continue; // Skip self
+                                    
+                                    // Calculate neighbor coordinates with wrapping
+                                    const nx = (x + dx + this.width) % this.width;
+                                    const ny = (y + dy + this.height) % this.height;
+                                    const nidx = ny * this.width + nx;
+
+                                    neighbors.push(nidx);
+                                }
+                            }
+
+                            indices[idx] = neighbors;
+                        }
+                    }
+
+                    return indices;
+                }
+
+                setCellValue(x, y, value) {
+                    const idx = y * this.width + x;
+                    this.currentGrid[idx] = value;
+                }
+
+                getCellValue(x, y) {
+                    const idx = y * this.width + x;
+                    return this.currentGrid[idx];
+                }
+
+                clear() {
+                    this
+                        .currentGrid
+                        .fill(0);
+                    this
+                        .nextGrid
+                        .fill(0);
+                    this.generation = 0;
+                }
+
+                randomize(fillPercentage = 30) {
+                    this.clear();
+                    const threshold = fillPercentage / 100;
+
+                    for (let i = 0; i < this.currentGrid.length; i++) {
+                        if (Math.random() < threshold) {
+                            // Random value between 1 and 100
+                            this.currentGrid[i] = Math.floor(Math.random() * 100) + 1;
+                        }
+                    }
+                }
+
+                addRule(rule) {
+                    this
+                        .rules
+                        .push(rule);
+                }
+
+                clearRules() {
+                    this.rules = [];
+                }
+
+                step() {
+                    // Reset next grid
+                    this
+                        .nextGrid
+                        .fill(0);
+
+                    // Apply rules to each cell
+                    for (let y = 0; y < this.height; y++) {
+                        for (let x = 0; x < this.width; x++) {
+                            const idx = y * this.width + x;
+                            const cellValue = this.currentGrid[idx];
+
+                            // Get neighbor values
+                            const neighbors = this
+                                .neighborIndices[idx]
+                                .map(nidx => this.currentGrid[nidx]);
+
+                            // Default: cell stays the same
+                            this.nextGrid[idx] = cellValue;
+
+                            // Apply rules in order (first matching rule wins)
+                            for (const rule of this.rules) {
+                                if (this.ruleApplies(cellValue, neighbors, rule)) {
+                                    this.nextGrid[idx] = rule.newValue;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    // Swap grids using typed array for efficiency
+                    [this.currentGrid, this.nextGrid] = [this.nextGrid, this.currentGrid];
+                    this.generation++;
+
+                    return this.getStatistics();
+                }
+
+                ruleApplies(cellValue, neighbors, rule) {
+                    // Check if cell value matches rule condition
+                    if (!this.cellValueMatches(cellValue, rule.cellValue)) {
+                        return false;
+                    }
+
+                    // Count neighbors that match the neighbor value condition
+                    const matchingNeighbors = neighbors.filter(value => this.cellValueMatches(value, rule.neighborValue));
+
+                    // Check if neighbor count matches rule condition
+                    return this.neighborCountMatches(matchingNeighbors.length, rule.neighborCount);
+                }
+
+                cellValueMatches(value, condition) {
+                    if (condition.type === 'any') {
+                        return true;
+                    } else if (condition.type === '0') {
+                        return value === 0;
+                    } else if (condition.type === 'non-zero') {
+                        return value > 0;
+                    } else if (condition.type === 'range') {
+                        return value >= condition.min && value <= condition.max;
+                    }
+                    return false;
+                }
+
+                neighborCountMatches(count, condition) {
+                    if (condition.type === 'exactly') {
+                        return count === condition.value;
+                    } else if (condition.type === 'less-than') {
+                        return count < condition.value;
+                    } else if (condition.type === 'greater-than') {
+                        return count > condition.value;
+                    } else if (condition.type === 'range') {
+                        return count >= condition.min && count <= condition.max;
+                    }
+                    return false;
+                }
+
+                start() {
+                    if (this.running) 
+                        return;
+                    
+                    this.running = true;
+                    this.interval = setInterval(() => {
+                        const stats = this.step();
+                        this.onStep
+                            ?.(stats);
+                    }, this.speed);
+                }
+
+                stop() {
+                    if (!this.running) 
+                        return;
+                    
+                    this.running = false;
+                    clearInterval(this.interval);
+                    this.interval = null;
+                }
+
+                setSpeed(speed) {
+                    this.speed = speed;
+                    if (this.running) {
+                        this.stop();
+                        this.start();
+                    }
+                }
+
+                resize(width, height) {
+                    const newGrid = new Uint8Array(width * height);
+                    const newNextGrid = new Uint8Array(width * height);
+
+                    // Copy existing grid data where possible
+                    const minWidth = Math.min(this.width, width);
+                    const minHeight = Math.min(this.height, height);
+
+                    for (let y = 0; y < minHeight; y++) {
+                        for (let x = 0; x < minWidth; x++) {
+                            const oldIdx = y * this.width + x;
+                            const newIdx = y * width + x;
+                            newGrid[newIdx] = this.currentGrid[oldIdx];
+                        }
+                    }
+
+                    this.width = width;
+                    this.height = height;
+                    this.currentGrid = newGrid;
+                    this.nextGrid = newNextGrid;
+
+                    // Recalculate neighbor indices
+                    this.neighborIndices = this.calculateNeighborIndices();
+                }
+
+                getStatistics() {
+                    const stats = {
+                        generation: this.generation,
+                        population: 0,
+                        valueCounts: new Array(101).fill(0) // 0-100
+                    };
+
+                    for (let i = 0; i < this.currentGrid.length; i++) {
+                        const value = this.currentGrid[i];
+                        if (value > 0) {
+                            stats.population++;
+                        }
+                        stats.valueCounts[value]++;
+                    }
+
+                    return stats;
+                }
+
+                exportConfiguration() {
+                    return {
+                        width: this.width,
+                        height: this.height,
+                        rules: this.rules,
+                        grid: Array.from(this.currentGrid),
+                        generation: this.generation
+                    };
+                }
+
+                importConfiguration(config) {
+                    this.resize(config.width, config.height);
+                    this.rules = config.rules;
+                    this.currentGrid = new Uint8Array(config.grid);
+                    this.nextGrid = new Uint8Array(this.width * this.height);
+                    this.generation = config.generation || 0;
+                }
+            }
+
+            // UI Controller
+            class CellularAutomataUI {
+                constructor() {
+                    this.initElements();
+                    this.initEmojiMapping();
+                    this.initEventListeners();
+                    this.initSimulator();
+                    this.loadSavedConfigurations();
+                    this.updateStatistics();
+                    this.zoom = 1;
+                }
+
+                initElements() {
+                    // Grid settings
+                    this.gridWidthInput = document.getElementById('grid-width');
+                    this.gridHeightInput = document.getElementById('grid-height');
+                    this.cellSizeInput = document.getElementById('cell-size');
+                    this.applyGridSettingsBtn = document.getElementById('apply-grid-settings');
+
+                    // Simulation controls
+                    this.playPauseBtn = document.getElementById('play-pause');
+                    this.stepBtn = document.getElementById('step');
+                    this.clearBtn = document.getElementById('clear');
+                    this.simulationSpeedInput = document.getElementById('simulation-speed');
+                    this.randomFillInput = document.getElementById('random-fill');
+                    this.randomFillBtn = document.getElementById('random-fill-btn');
+
+                    // Emoji mapping
+                    this.emojiMappingContainer = document.getElementById('emoji-mapping');
+
+                    // Rules
+                    this.ruleCellValueSelect = document.getElementById('rule-cell-value');
+                    this.cellValueRangeDiv = document.getElementById('cell-value-range');
+                    this.cellValueMinInput = document.getElementById('cell-value-min');
+                    this.cellValueMaxInput = document.getElementById('cell-value-max');
+
+                    this.ruleNeighborCountSelect = document.getElementById('rule-neighbor-count');
+                    this.neighborCountValueDiv = document.getElementById('neighbor-count-value');
+                    this.neighborCountInput = document.getElementById('neighbor-count');
+                    this.neighborCountRangeDiv = document.getElementById('neighbor-count-range');
+                    this.neighborCountMinInput = document.getElementById('neighbor-count-min');
+                    this.neighborCountMaxInput = document.getElementById('neighbor-count-max');
+
+                    this.ruleNeighborValueSelect = document.getElementById('rule-neighbor-value');
+                    this.neighborValueRangeDiv = document.getElementById('neighbor-value-range');
+                    this.neighborValueMinInput = document.getElementById('neighbor-value-min');
+                    this.neighborValueMaxInput = document.getElementById('neighbor-value-max');
+
+                    this.ruleNewValueInput = document.getElementById('rule-new-value');
+                    this.addRuleBtn = document.getElementById('add-rule');
+                    this.rulesListContainer = document.getElementById('rules-list');
+
+                    // Presets
+                    this.presetSelect = document.getElementById('preset-select');
+                    this.loadPresetBtn = document.getElementById('load-preset');
+
+                    // Save/Load
+                    this.configNameInput = document.getElementById('config-name');
+                    this.saveConfigBtn = document.getElementById('save-config');
+                    this.savedConfigsContainer = document.getElementById('saved-configs');
+                    this.exportConfigBtn = document.getElementById('export-config');
+                    this.importConfigBtn = document.getElementById('import-config');
+
+                    // Statistics
+                    this.statisticsContainer = document.getElementById('statistics');
+
+                    // Grid
+                    this.gridContainer = document.getElementById('grid');
+
+                    // Zoom controls
+                    this.zoomInBtn = document.getElementById('zoom-in');
+                    this.zoomOutBtn = document.getElementById('zoom-out');
+                }
+
+                initEmojiMapping() {
+                    this.emojiMap = [
+                        {
+                            min: 0,
+                            max: 0,
+                            emoji: '⬜'
+                        }, {
+                            min: 1,
+                            max: 20,
+                            emoji: '🌱'
+                        }, {
+                            min: 21,
+                            max: 40,
+                            emoji: '🌿'
+                        }, {
+                            min: 41,
+                            max: 60,
+                            emoji: '🌳'
+                        }, {
+                            min: 61,
+                            max: 80,
+                            emoji: '🔥'
+                        }, {
+                            min: 81,
+                            max: 100,
+                            emoji: '🪨'
+                        }
+                    ];
+
+                    this.renderEmojiMapping();
+                }
+
+                renderEmojiMapping() {
+                    this.emojiMappingContainer.innerHTML = '';
+
+                    this
+                        .emojiMap
+                        .forEach((mapping, index) => {
+                            const item = document.createElement('div');
+                            item.className = 'emoji-map-item';
+
+                            const emoji = document.createElement('div');
+                            emoji.className = 'emoji-display';
+                            emoji.textContent = mapping.emoji;
+
+                            const range = document.createElement('div');
+                            if (mapping.min === mapping.max) {
+                                range.textContent = mapping.min;
+                            } else {
+                                range.textContent = `${mapping.min}-${mapping.max}`;
+                            }
+
+                            item.appendChild(emoji);
+                            item.appendChild(range);
+                            this
+                                .emojiMappingContainer
+                                .appendChild(item);
+                        });
+                }
+
+                getEmojiForValue(value) {
+                    for (const mapping of this.emojiMap) {
+                        if (value >= mapping.min && value <= mapping.max) {
+                            return mapping.emoji;
+                        }
+                    }
+                    return '❓';
+                }
+
+                initEventListeners() {
+                    // Grid settings
+                    this
+                        .applyGridSettingsBtn
+                        .addEventListener('click', () => this.applyGridSettings());
+
+                    // Simulation controls
+                    this
+                        .playPauseBtn
+                        .addEventListener('click', () => this.togglePlayPause());
+                    this
+                        .stepBtn
+                        .addEventListener('click', () => this.step());
+                    this
+                        .clearBtn
+                        .addEventListener('click', () => this.clear());
+                    this
+                        .simulationSpeedInput
+                        .addEventListener('change', () => this.updateSimulationSpeed());
+                    this
+                        .randomFillBtn
+                        .addEventListener('click', () => this.randomFill());
+
+                    // Rules
+                    this
+                        .ruleCellValueSelect
+                        .addEventListener('change', () => this.updateRuleInputVisibility());
+                    this
+                        .ruleNeighborCountSelect
+                        .addEventListener('change', () => this.updateRuleInputVisibility());
+                    this
+                        .ruleNeighborValueSelect
+                        .addEventListener('change', () => this.updateRuleInputVisibility());
+                    this
+                        .addRuleBtn
+                        .addEventListener('click', () => this.addRule());
+
+                    // Presets
+                    this
+                        .loadPresetBtn
+                        .addEventListener('click', () => this.loadPreset());
+
+                    // Save/Load
+                    this
+                        .saveConfigBtn
+                        .addEventListener('click', () => this.saveConfiguration());
+                    this
+                        .exportConfigBtn
+                        .addEventListener('click', () => this.exportConfiguration());
+                    this
+                        .importConfigBtn
+                        .addEventListener('click', () => this.importConfiguration());
+
+                    // Zoom controls
+                    this
+                        .zoomInBtn
+                        .addEventListener('click', () => this.zoomIn());
+                    this
+                        .zoomOutBtn
+                        .addEventListener('click', () => this.zoomOut());
+
+                    // Update rule input visibility initially
+                    this.updateRuleInputVisibility();
+                }
+
+                initSimulator() {
+                    const width = parseInt(this.gridWidthInput.value);
+                    const height = parseInt(this.gridHeightInput.value);
+                    this.cellSize = parseInt(this.cellSizeInput.value);
+
+                    this.simulator = new CellularAutomata(width, height);
+                    this.simulator.onStep = (stats) => this.updateStatistics(stats);
+
+                    this.renderGrid();
+                    this.initGridInteraction();
+                }
+
+                renderGrid() {
+                    this.gridContainer.innerHTML = '';
+
+                    // Set grid dimensions
+                    this.gridContainer.style.gridTemplateColumns = `repeat(${this.simulator.width}, ${this.cellSize}px)`;
+                    this.gridContainer.style.gridTemplateRows = `repeat(${this.simulator.height}, ${this.cellSize}px)`;
+
+                    // Create cells
+                    for (let y = 0; y < this.simulator.height; y++) {
+                        for (let x = 0; x < this.simulator.width; x++) {
+                            const cell = document.createElement('div');
+                            cell.className = 'cell';
+                            cell.dataset.x = x;
+                            cell.dataset.y = y;
+
+                            const value = this
+                                .simulator
+                                .getCellValue(x, y);
+                            cell.textContent = this.getEmojiForValue(value);
+
+                            this
+                                .gridContainer
+                                .appendChild(cell);
+                        }
+                    }
+                }
+
+                initGridInteraction() {
+                    // Add click event to cells
+                    this
+                        .gridContainer
+                        .addEventListener('click', (e) => {
+                            if (e.target.classList.contains('cell')) {
+                                const x = parseInt(e.target.dataset.x);
+                                const y = parseInt(e.target.dataset.y);
+
+                                // Toggle cell value (0 -> 1, anything else -> 0)
+                                const currentValue = this
+                                    .simulator
+                                    .getCellValue(x, y);
+                                const newValue = currentValue === 0
+                                    ? 1
+                                    : 0;
+
+                                this
+                                    .simulator
+                                    .setCellValue(x, y, newValue);
+                                e.target.textContent = this.getEmojiForValue(newValue);
+
+                                this.updateStatistics();
+                            }
+                        });
+                }
+
+                updateGrid() {
+                    const cells = this
+                        .gridContainer
+                        .querySelectorAll('.cell');
+
+                    for (let i = 0; i < cells.length; i++) {
+                        const cell = cells[i];
+                        const x = parseInt(cell.dataset.x);
+                        const y = parseInt(cell.dataset.y);
+                        const value = this
+                            .simulator
+                            .getCellValue(x, y);
+
+                        cell.textContent = this.getEmojiForValue(value);
+                    }
+                }
+
+                applyGridSettings() {
+                    const width = parseInt(this.gridWidthInput.value);
+                    const height = parseInt(this.gridHeightInput.value);
+                    const cellSize = parseInt(this.cellSizeInput.value);
+
+                    if (width !== this.simulator.width || height !== this.simulator.height) {
+                        this
+                            .simulator
+                            .resize(width, height);
+                    }
+
+                    this.cellSize = cellSize;
+                    this.renderGrid();
+                    this.updateStatistics();
+                }
+
+                togglePlayPause() {
+                    if (this.simulator.running) {
+                        this
+                            .simulator
+                            .stop();
+                        this.playPauseBtn.innerHTML = '▶ Play';
+                        this
+                            .playPauseBtn
+                            .classList
+                            .remove('btn-danger');
+                        this
+                            .playPauseBtn
+                            .classList
+                            .add('btn-success');
+                    } else {
+                        this
+                            .simulator
+                            .start();
+                        this.playPauseBtn.innerHTML = '⏸ Pause';
+                        this
+                            .playPauseBtn
+                            .classList
+                            .remove('btn-success');
+                        this
+                            .playPauseBtn
+                            .classList
+                            .add('btn-danger');
+                    }
+                }
+
+                step() {
+                    this
+                        .simulator
+                        .step();
+                    this.updateGrid();
+                    this.updateStatistics();
+                }
+
+                clear() {
+                    this
+                        .simulator
+                        .clear();
+                    this.updateGrid();
+                    this.updateStatistics();
+                }
+
+                updateSimulationSpeed() {
+                    const speed = parseInt(this.simulationSpeedInput.value);
+                    this
+                        .simulator
+                        .setSpeed(speed);
+                }
+
+                randomFill() {
+                    const percentage = parseInt(this.randomFillInput.value);
+                    this
+                        .simulator
+                        .randomize(percentage);
+                    this.updateGrid();
+                    this.updateStatistics();
+                }
+
+                updateRuleInputVisibility() {
+                    // Cell value range visibility
+                    if (this.ruleCellValueSelect.value === 'range') {
+                        this.cellValueRangeDiv.style.display = 'block';
+                    } else {
+                        this.cellValueRangeDiv.style.display = 'none';
+                    }
+
+                    // Neighbor count range visibility
+                    if (this.ruleNeighborCountSelect.value === 'range') {
+                        this.neighborCountValueDiv.style.display = 'none';
+                        this.neighborCountRangeDiv.style.display = 'block';
+                    } else {
+                        this.neighborCountValueDiv.style.display = 'block';
+                        this.neighborCountRangeDiv.style.display = 'none';
+                    }
+
+                    // Neighbor value range visibility
+                    if (this.ruleNeighborValueSelect.value === 'range') {
+                        this.neighborValueRangeDiv.style.display = 'block';
+                    } else {
+                        this.neighborValueRangeDiv.style.display = 'none';
+                    }
+                }
+
+                addRule() {
+                    // Build rule object based on form inputs
+                    const rule = {
+                        cellValue: this.getCellValueCondition(),
+                        neighborCount: this.getNeighborCountCondition(),
+                        neighborValue: this.getNeighborValueCondition(),
+                        newValue: parseInt(this.ruleNewValueInput.value)
+                    };
+
+                    // Add rule to simulator
+                    this
+                        .simulator
+                        .addRule(rule);
+
+                    // Add rule to UI
+                    this.renderRules();
+                }
+
+                getCellValueCondition() {
+                    const type = this.ruleCellValueSelect.value;
+
+                    if (type === 'range') {
+                        return {
+                            type: 'range',
+                            min: parseInt(this.cellValueMinInput.value),
+                            max: parseInt(this.cellValueMaxInput.value)
+                        };
+                    }
+
+                    return {type};
+                }
+
+                getNeighborCountCondition() {
+                    const type = this.ruleNeighborCountSelect.value;
+
+                    if (type === 'range') {
+                        return {
+                            type: 'range',
+                            min: parseInt(this.neighborCountMinInput.value),
+                            max: parseInt(this.neighborCountMaxInput.value)
+                        };
+                    }
+
+                    return {
+                        type,
+                        value: parseInt(this.neighborCountInput.value)
+                    };
+                }
+
+                getNeighborValueCondition() {
+                    const type = this.ruleNeighborValueSelect.value;
+
+                    if (type === 'range') {
+                        return {
+                            type: 'range',
+                            min: parseInt(this.neighborValueMinInput.value),
+                            max: parseInt(this.neighborValueMaxInput.value)
+                        };
+                    }
+
+                    return {type};
+                }
+
+                renderRules() {
+                    this.rulesListContainer.innerHTML = '';
+
+                    this
+                        .simulator
+                        .rules
+                        .forEach((rule, index) => {
+                            const ruleItem = document.createElement('div');
+                            ruleItem.className = 'rule-item';
+
+                            const ruleText = document.createElement('div');
+                            ruleText.className = 'rule-text';
+                            ruleText.textContent = this.formatRuleText(rule);
+
+                            const removeBtn = document.createElement('button');
+                            removeBtn.className = 'remove-rule';
+                            removeBtn.textContent = 'X';
+                            removeBtn.addEventListener('click', () => this.removeRule(index));
+
+                            ruleItem.appendChild(ruleText);
+                            ruleItem.appendChild(removeBtn);
+                            this
+                                .rulesListContainer
+                                .appendChild(ruleItem);
+                        });
+                }
+
+                formatRuleText(rule) {
+                    let text = 'IF cell is ';
+
+                    // Cell value condition
+                    if (rule.cellValue.type === 'any') {
+                        text += 'any value';
+                    } else if (rule.cellValue.type === '0') {
+                        text += 'empty (0)';
+                    } else if (rule.cellValue.type === 'range') {
+                        text += `in range ${rule.cellValue.min}-${rule.cellValue.max}`;
+                    }
+
+                    text += '\nAND neighbors ';
+
+                    // Neighbor count condition
+                    if (rule.neighborCount.type === 'exactly') {
+                        text += `count is exactly ${rule.neighborCount.value}`;
+                    } else if (rule.neighborCount.type === 'less-than') {
+                        text += `count is < ${rule.neighborCount.value}`;
+                    } else if (rule.neighborCount.type === 'greater-than') {
+                        text += `count is > ${rule.neighborCount.value}`;
+                    } else if (rule.neighborCount.type === 'range') {
+                        text += `count is in range ${rule.neighborCount.min}-${rule.neighborCount.max}`;
+                    }
+
+                    // Neighbor value condition
+                    if (rule.neighborValue.type !== 'any') {
+                        text += '\nAND neighbor values are ';
+
+                        if (rule.neighborValue.type === 'non-zero') {
+                            text += 'non-zero';
+                        } else if (rule.neighborValue.type === 'range') {
+                            text += `in range ${rule.neighborValue.min}-${rule.neighborValue.max}`;
+                        }
+                    }
+
+                    text += `\nTHEN set cell to ${rule
+                        .newValue} (${this
+                        .getEmojiForValue(rule.newValue)})`;
+
+                    return text;
+                }
+
+                removeRule(index) {
+                    this
+                        .simulator
+                        .rules
+                        .splice(index, 1);
+                    this.renderRules();
+                }
+
+                loadPreset() {
+                    const preset = this.presetSelect.value;
+
+                    if (!preset) 
+                        return;
+                    
+                    // Clear existing rules
+                    this
+                        .simulator
+                        .clearRules();
+
+                    // Load preset rules
+                    switch (preset) {
+                        case 'game-of-life':
+                            this.loadGameOfLife();
+                            break;
+                        case 'forest-fire':
+                            this.loadForestFire();
+                            break;
+                        case 'cyclic':
+                            this.loadCyclic();
+                            break;
+                        case 'brian-brain':
+                            this.loadBrianBrain();
+                            break;
+                    }
+
+                    // Update UI
+                    this.renderRules();
+                }
+
+                loadGameOfLife() {
+                    // Conway's Game of Life rules
+                    // 1. Any live cell with fewer than two live neighbors dies (underpopulation)
+                    this
+                        .simulator
+                        .addRule({
+                            cellValue: {
+                                type: 'non-zero'
+                            },
+                            neighborCount: {
+                                type: 'less-than',
+                                value: 2
+                            },
+                            neighborValue: {
+                                type: 'non-zero'
+                            },
+                            newValue: 0
+                        });
+
+                    // 2. Any live cell with two or three live neighbors lives on
+                    // (This is handled by default - cells stay the same unless a rule changes them)
+
+                    // 3. Any live cell with more than three live neighbors dies (overpopulation)
+                    this
+                        .simulator
+                        .addRule({
+                            cellValue: {
+                                type: 'non-zero'
+                            },
+                            neighborCount: {
+                                type: 'greater-than',
+                                value: 3
+                            },
+                            neighborValue: {
+                                type: 'non-zero'
+                            },
+                            newValue: 0
+                        });
+
+                    // 4. Any dead cell with exactly three live neighbors becomes a live cell (reproduction)
+                    this
+                        .simulator
+                        .addRule({
+                            cellValue: {
+                                type: '0'
+                            },
+                            neighborCount: {
+                                type: 'exactly',
+                                value: 3
+                            },
+                            neighborValue: {
+                                type: 'non-zero'
+                            },
+                            newValue: 1
+                        });
+                }
+
+                loadForestFire() {
+                    // Forest Fire model
+                    // Empty (0) -> Tree (1) with probability p
+                    // Tree (1) -> Burning (2) if any neighbor is burning
+                    // Burning (2) -> Empty (0)
+
+                    // Empty to Tree (growth)
+                    this
+                        .simulator
+                        .addRule({
+                            cellValue: {
+                                type: '0'
+                            },
+                            neighborCount: {
+                                type: 'exactly',
+                                value: 1
+                            }, // Just a placeholder, actual growth is random
+                            neighborValue: {
+                                type: 'any'
+                            },
+                            newValue: 20 // Young tree
+                        });
+
+                    // Tree grows older
+                    this
+                        .simulator
+                        .addRule({
+                            cellValue: {
+                                type: 'range',
+                                min: 1,
+                                max: 40
+                            },
+                            neighborCount: {
+                                type: 'any'
+                            },
+                            neighborValue: {
+                                type: 'any'
+                            },
+                            newValue: 40 // Mature tree
+                        });
+
+                    // Tree catches fire if neighbor is burning
+                    this
+                        .simulator
+                        .addRule({
+                            cellValue: {
+                                type: 'range',
+                                min: 20,
+                                max: 60
+                            },
+                            neighborCount: {
+                                type: 'greater-than',
+                                value: 0
+                            },
+                            neighborValue: {
+                                type: 'range',
+                                min: 61,
+                                max: 80
+                            },
+                            newValue: 70 // Burning
+                        });
+
+                    // Burning tree turns to ash
+                    this
+                        .simulator
+                        .addRule({
+                            cellValue: {
+                                type: 'range',
+                                min: 61,
+                                max: 80
+                            },
+                            neighborCount: {
+                                type: 'any'
+                            },
+                            neighborValue: {
+                                type: 'any'
+                            },
+                            newValue: 90 // Ash
+                        });
+
+                    // Ash eventually clears
+                    this
+                        .simulator
+                        .addRule({
+                            cellValue: {
+                                type: 'range',
+                                min: 81,
+                                max: 100
+                            },
+                            neighborCount: {
+                                type: 'any'
+                            },
+                            neighborValue: {
+                                type: 'any'
+                            },
+                            newValue: 0 // Empty
+                        });
+                }
+
+                loadCyclic() {
+                    // Cyclic Cellular Automaton
+                    // Each cell cycles through states 0-5
+                    // A cell in state n changes to state n+1 if it has at least one neighbor in state n+1
+
+                    for (let i = 0; i < 5; i++) {
+                        const nextState = (i + 1) % 6;
+                        const value = Math.floor(i * 20);
+                        const nextValue = Math.floor(nextState * 20);
+
+                        this
+                            .simulator
+                            .addRule({
+                                cellValue: {
+                                    type: 'range',
+                                    min: value,
+                                    max: value + 19
+                                },
+                                neighborCount: {
+                                    type: 'greater-than',
+                                    value: 0
+                                },
+                                neighborValue: {
+                                    type: 'range',
+                                    min: nextValue,
+                                    max: nextValue + 19
+                                },
+                                newValue: nextValue
+                            });
+                    }
+                }
+
+                loadBrianBrain() {
+                    // Brian's Brain
+                    // 0 = dead, 1 = alive, 2 = dying
+                    // Dead -> Alive if exactly 2 alive neighbors
+                    // Alive -> Dying (always)
+                    // Dying -> Dead (always)
+
+                    // Dead to Alive
+                    this
+                        .simulator
+                        .addRule({
+                            cellValue: {
+                                type: '0'
+                            },
+                            neighborCount: {
+                                type: 'exactly',
+                                value: 2
+                            },
+                            neighborValue: {
+                                type: 'range',
+                                min: 1,
+                                max: 20
+                            },
+                            newValue: 10
+                        });
+
+                    // Alive to Dying
+                    this
+                        .simulator
+                        .addRule({
+                            cellValue: {
+                                type: 'range',
+                                min: 1,
+                                max: 20
+                            },
+                            neighborCount: {
+                                type: 'any'
+                            },
+                            neighborValue: {
+                                type: 'any'
+                            },
+                            newValue: 70
+                        });
+
+                    // Dying to Dead
+                    this
+                        .simulator
+                        .addRule({
+                            cellValue: {
+                                type: 'range',
+                                min: 61,
+                                max: 80
+                            },
+                            neighborCount: {
+                                type: 'any'
+                            },
+                            neighborValue: {
+                                type: 'any'
+                            },
+                            newValue: 0
+                        });
+                }
+
+                saveConfiguration() {
+                    const name = this
+                        .configNameInput
+                        .value
+                        .trim() || `Configuration ${Date.now()}`;
+
+                    // Get current configuration
+                    const config = {
+                        name,
+                        data: this
+                            .simulator
+                            .exportConfiguration()
+                    };
+
+                    // Save to localStorage
+                    let savedConfigs = this.getSavedConfigurations();
+                    savedConfigs[name] = config;
+                    localStorage.setItem('cellularAutomataConfigs', JSON.stringify(savedConfigs));
+
+                    // Update UI
+                    this.loadSavedConfigurations();
+                }
+
+                getSavedConfigurations() {
+                    const saved = localStorage.getItem('cellularAutomataConfigs');
+                    return saved
+                        ? JSON.parse(saved)
+                        : {};
+                }
+
+                loadSavedConfigurations() {
+                    this.savedConfigsContainer.innerHTML = '';
+
+                    const configs = this.getSavedConfigurations();
+
+                    for (const name in configs) {
+                        const configItem = document.createElement('div');
+                        configItem.className = 'config-item';
+
+                        const nameSpan = document.createElement('span');
+                        nameSpan.textContent = name;
+
+                        const loadBtn = document.createElement('button');
+                        loadBtn.textContent = 'Load';
+                        loadBtn.addEventListener('click', () => this.loadConfiguration(name));
+
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = 'Delete';
+                        deleteBtn.className = 'btn-danger';
+                        deleteBtn.addEventListener('click', () => this.deleteConfiguration(name));
+
+                        configItem.appendChild(nameSpan);
+                        configItem.appendChild(loadBtn);
+                        configItem.appendChild(deleteBtn);
+
+                        this
+                            .savedConfigsContainer
+                            .appendChild(configItem);
+                    }
+                }
+
+                loadConfiguration(name) {
+                    const configs = this.getSavedConfigurations();
+                    const config = configs[name];
+
+                    if (config) {
+                        this
+                            .simulator
+                            .importConfiguration(config.data);
+                        this.renderGrid();
+                        this.renderRules();
+                        this.updateStatistics();
+                    }
+                }
+
+                deleteConfiguration(name) {
+                    const configs = this.getSavedConfigurations();
+                    delete configs[name];
+                    localStorage.setItem('cellularAutomataConfigs', JSON.stringify(configs));
+                    this.loadSavedConfigurations();
+                }
+
+                exportConfiguration() {
+                    const config = this
+                        .simulator
+                        .exportConfiguration();
+                    const json = JSON.stringify(config, null, 2);
+
+                    // Create a blob and download link
+                    const blob = new Blob([json], {type: 'application/json'});
+                    const url = URL.createObjectURL(blob);
+
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `cellular-automata-config-${Date.now()}.json`;
+                    document
+                        .body
+                        .appendChild(a);
+                    a.click();
+
+                    // Clean up
+                    setTimeout(() => {
+                        document
+                            .body
+                            .removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }, 0);
+                }
+
+                importConfiguration() {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'application/json';
+
+                    input.addEventListener('change', (e) => {
+                        const file = e
+                            .target
+                            .files[0];
+                        if (!file) 
+                            return;
+                        
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            try {
+                                const config = JSON.parse(event.target.result);
+                                this
+                                    .simulator
+                                    .importConfiguration(config);
+                                this.renderGrid();
+                                this.renderRules();
+                                this.updateStatistics();
+                            } catch (error) {
+                                alert('Error importing configuration: ' + error.message);
+                            }
+                        };
+                        reader.readAsText(file);
+                    });
+
+                    input.click();
+                }
+
+                updateStatistics(stats) {
+                    if (!stats) {
+                        stats = this
+                            .simulator
+                            .getStatistics();
+                    }
+
+                    this.statisticsContainer.innerHTML = '';
+
+                    // Generation
+                    const genItem = document.createElement('div');
+                    genItem.className = 'stats-item';
+                    genItem.innerHTML = `<span>Generation:</span> <span>${stats.generation}</span>`;
+                    this
+                        .statisticsContainer
+                        .appendChild(genItem);
+
+                    // Population
+                    const popItem = document.createElement('div');
+                    popItem.className = 'stats-item';
+                    popItem.innerHTML = `<span>Population:</span> <span>${stats
+                        .population} cells (${Math
+                        .round(stats.population / (this.simulator.width * this.simulator.height) * 100)}%)</span>`;
+                    this
+                        .statisticsContainer
+                        .appendChild(popItem);
+
+                    // Value distribution
+                    const valueDistItem = document.createElement('div');
+                    valueDistItem.className = 'stats-item';
+                    valueDistItem.innerHTML = '<span>Value Distribution:</span>';
+                    this
+                        .statisticsContainer
+                        .appendChild(valueDistItem);
+
+                    // Group values by emoji mapping
+                    this
+                        .emojiMap
+                        .forEach(mapping => {
+                            let count = 0;
+                            for (let i = mapping.min; i <= mapping.max; i++) {
+                                count += stats.valueCounts[i] || 0;
+                            }
+
+                            if (count > 0) {
+                                const emojiItem = document.createElement('div');
+                                emojiItem.className = 'stats-item';
+                                emojiItem.style.paddingLeft = '20px';
+                                emojiItem.innerHTML = `<span>${mapping.emoji} (${mapping.min === mapping.max
+                                    ? mapping.min
+                                    : mapping.min + '-' + mapping.max}):</span> <span>${count} cells</span>`;
+                                this
+                                    .statisticsContainer
+                                    .appendChild(emojiItem);
+                            }
+                        });
+
+                    // If simulator is running, update the grid
+                    if (this.simulator.running) {
+                        this.updateGrid();
+                    }
+                }
+
+                zoomIn() {
+                    this.zoom *= 1.2;
+                    this.applyZoom();
+                }
+
+                zoomOut() {
+                    this.zoom /= 1.2;
+                    this.applyZoom();
+                }
+
+                applyZoom() {
+                    this.gridContainer.style.transform = `scale(${this.zoom})`;
+                }
+            }
+
+            // Initialize the application
+            document.addEventListener('DOMContentLoaded', () => {
+                const app = new CellularAutomataUI();
+            });
+        </script>
+    </body>
+</html>
